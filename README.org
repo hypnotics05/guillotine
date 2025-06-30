@@ -1,0 +1,9 @@
+* Guillotine
+
+Guillotine is a [[https://www.gnu.org/software/guile/][guile]] script to slice up a video using [[https://ffmpeg.org/][ffmpeg]] via a plain text file.
+
+** Download and Installation
+
+** Tests
+
+* Contributing
