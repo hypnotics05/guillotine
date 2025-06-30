@@ -4,6 +4,12 @@
 (use-modules (ice-9 format)
              (ice-9 match))
 
+#| 
+  TODO: time file seporator
+    We need to create a function that can fetch the REC_START and REC_END of each recording session denoted by the epoch of REC_END
+    The name of the file uses %Y-%m-%d-%H-%M-%S.mkv so REC_END should just be epoch of the file name.
+|#
+
 (define elog "")
 (define clip-count 0)
 (define video-count 0)
