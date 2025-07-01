@@ -110,7 +110,6 @@
                  (list range)))
          ranges)))
 
-;; TODO REPL really doesn't like this function I think there may be some missnamed stuff in here
 (define (guillotine path time)
   (for-each 
     (lambda (pair) 
@@ -120,7 +119,7 @@
                            (string=? file (date->string (time-utc->date (add-duration (car time) (make-time time-duration 0 1))) "~Y-~m-~d-~H-~M-~S"))))
                      (scandir path)))
              (video (if file
-                      (string-append path "/" file)
+                      (string-append path file)
                       (error "No matching video file found for " (car time))))
              (extension (string-append video ".mkv"))
              (range (cmd/epoch->start/end (cdr time))))
