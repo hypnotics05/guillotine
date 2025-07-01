@@ -12,15 +12,15 @@
 
 (use-modules (ice-9 format)
              (srfi srfi-1)
+             (srfi srfi-19)
              (ice-9 match))
 
 #| 
-  TODO: time file seporator
-    We need to create a function that can fetch the REC_START and REC_END of each recording session denoted by the epoch of REC_END
-    The name of the file uses %Y-%m-%d-%H-%M-%S.mkv so REC_END should just be epoch of the file name.
+  TODO: Time accuracy
+    Since we are using timestamps to name files and relying purely on timing, we should be looking 
+    for a video file whose name could be 1 second more then the provided name.
 |#
 
-(define elog "")
 (define clip-count 0)
 (define video-count 0)
 (define SHA5 300) ;; 5 minutes in seconds
@@ -43,7 +43,7 @@
 |#
 (define (cmd/epoch->start/end cmds)
   (let* ((REC_START (cdr (car cmds))) ;; TODO: refactor to use last-pair 
-        (REC_END (- (cdr (car (list-tail cmds (- (length cmds) 1)))) REC_START))) ;; timestamp for the end of REC
+         (REC_END (- (cdr (car (list-tail cmds (- (length cmds) 1)))) REC_START))) ;; timestamp for the end of REC
     (let loop ((rest cmds) (result '()))
       (match rest
              (()
@@ -73,50 +73,81 @@
               (loop tail result))))))
 
 #|
-  Creates a list of (video . (epoch-pairs)) to be processed.
+  Creates a list of (time . (epoch-pairs)) to be processed.
 |#
 (define (string->video/slice file)
   (let* ((cmds (string->cmd/epoch file))
          (ranges (let loop ((rest cmds)
-                             (in-range? #f)
-                             (current '())
-                             (acc '()))
-                    (cond
-                      ((null? rest)
-                       ;; If end of list and currently collecting, discard incomplete
-                       (reverse acc))
+                            (in-range? #f)
+                            (current '())
+                            (acc '()))
+                   (cond
+                     ((null? rest)
+                      ;; If end of list and currently collecting, discard incomplete
+                      (reverse acc))
 
-                      ((and (not in-range?)
-                            (string=? (car (car rest)) "REC_START")
-                            (number? (cdr (car rest))))
-                       ;; Found start of new range
-                       (loop (cdr rest) #t (list (car rest)) acc))
+                     ((and (not in-range?)
+                           (string=? (car (car rest)) "REC_START")
+                           (number? (cdr (car rest))))
+                      ;; Found start of new range
+                      (loop (cdr rest) #t (list (car rest)) acc))
 
-                      ((and in-range?
-                            (string=? (car (car rest)) "REC_END")
-                            (number? (cdr (car rest))))
-                       ;; End of current range, add it to result
-                       (loop (cdr rest) #f '() (cons (reverse (cons (car rest) current)) acc)))
+                     ((and in-range?
+                           (string=? (car (car rest)) "REC_END")
+                           (number? (cdr (car rest))))
+                      ;; End of current range, add it to result
+                      (loop (cdr rest) #f '() (cons (reverse (cons (car rest) current)) acc)))
 
-                      (in-range?
-                        ;; Collect intermediate element
-                        (loop (cdr rest) #t (cons (car rest) current) acc))
+                     (in-range?
+                       ;; Collect intermediate element
+                       (loop (cdr rest) #t (cons (car rest) current) acc))
 
-                      (else
-                        ;; Outside of any range, keep scanning
-                        (loop (cdr rest) #f current acc))))))
+                     (else
+                       ;; Outside of any range, keep scanning
+                       (loop (cdr rest) #f current acc))))))
     (map (lambda (range) ;; 
-           (let ((END (cdr (car (last-pair range)))))
-             (cons (date->string (time-utc->date (make-time time-utc 0 END)) "~Y-~m-~d-~H-~M-~S" )
-                   (list range))))
+           (cons (make-time time-utc 0 (cdr (car (last-pair range))))
+                 (list range)))
          ranges)))
 
-(define (guillotine video time)
+;; TODO REPL really doesn't like this function I think there may be some missnamed stuff in here
+(define (guillotine path time)
   (for-each 
-    (lambda (pair)
-      (display pair)
-      (newline))
-    time))
+    (lambda (pair) 
+      (let* ((file 
+               (find (lambda (file) 
+                       (or (string=? file (date->string (time-utc->date (car time)) "~Y-~m-~d-~H-~M-~S"))
+                           (string=? file (date->string (time-utc->date (add-duration (car time) (make-time time-duration 0 1))) "~Y-~m-~d-~H-~M-~S"))))
+                     (scandir path)))
+             (video (if file
+                      (string-append path "/" file)
+                      (error "No matching video file found for " (car time))))
+             (extension (string-append video ".mkv"))
+             (range (cmd/epoch->start/end (cdr time))))
+        (for-each 
+          (lambda (clip)
+            (let ((code (system* "ffmpeg"
+                                 "-ss" (car clip)
+                                 "-to" (car (cdr clip))
+                                 "-i" extension
+                                 "-c:v" "libx264"
+                                 "-preset" "fast"
+                                 "-crf" "18"
+                                 "-c:a" "aac"
+                                 "-b:a" "192k"
+                                 "-ar" "48000"
+                                 "-ac" "2"
+                                 "-movflags" "+faststart"
+                                 (string-append video "-" (number->string clip-count) ".mp4"))))
+              (if (= code 0)
+                (set! clip-count (+ clip-count 1)) ;; Video parsed successfully
+                (call-with-output-file 
+                  "guillotine-errors.log"
+                  (lambda (port)
+                    (display (string-append extension " failed with clip " clip) port))))))
+          range)
+        (set! video-count (+ video-count 1))))
+    (string->video/slice time)))
 
 #|
   guillotine path file
