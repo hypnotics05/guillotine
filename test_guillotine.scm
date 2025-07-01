@@ -6,7 +6,8 @@
 
 (load "guillotine.scm")
 
-(define $test
-  "
+(define datam (open-input-file "tests/basic"))
 
-  ")
+(test-begin "Guillotine Input Parse Tests")
+
+(test-end)
