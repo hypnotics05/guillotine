@@ -1,9 +1,46 @@
 * Guillotine
 
-Guillotine is a [[https://www.gnu.org/software/guile/][guile]] script to slice up a video using [[https://ffmpeg.org/][ffmpeg]] via a plain text file.
+Guillotine is a [[https://www.gnu.org/software/guile/][guile]] script to slice up a video using [[https://ffmpeg.org/][ffmpeg]] via a plain text file for linux.
 
 ** Download and Installation
+Guillotine was written as a single portable script, just drop the script in your path and call it.
+
+If you don't know where to put your file, run the script install.scm, and choose /usr/local/bin.
+
+#+begin_src sh
+  sudo ./install.scm
+#+end_src
 
 ** Tests
+
+** File Format
+
+Guillotine uses a (Key . Value) pair format of (CMD . seconds from epoch timestamp).
+
+|--------------+-----------------------------------------|
+| Command Name | Description                             |
+|--------------+-----------------------------------------|
+| REC_START    | The start of a new recording session    |
+| REC_END      | The end of a recording session          |
+| IN           | The start of a new clip                 |
+| OUT          | The end of a clip                       |
+| SHA5         | Clip starts 5 minutes before timestamp  |
+| SHA10        | Clip starts 10 minutes before timestamp |
+|--------------+-----------------------------------------|
+
+To start a new session, add REC_START and a timestamp, end the session with a (REC_END . timestamp). Video names should match this date template "%Y-%m-%d-%H-%M-%S.mkv"
+
+** How to use
+
+Ensure that whenever you start a recording session, appends "REC_START $(date +%s)" to a file and "REC_END $(date +%s)" when it ends. You can append any command + $(date +%s) while recording to the file.
+
+When you want to run the script: run guillotine [path] [file], where path is the path name containing the videos, and file has all commands and timestamps related to the videos in path.
+
+#+begin_src sh
+  guillotine ~/videos ~/time
+#+end_src
+
+*** OBS
+If your using obs, you can add obs.lua to your scripts, and it will sync up your REC_START and REC_END with you starting and ending your recording.
 
 * Contributing
