@@ -129,13 +129,13 @@
                                  "-ss" (car clip)
                                  "-to" (car (cdr clip))
                                  "-i" extension
+                                 "-map" "0"
                                  "-c:v" "libx264"
                                  "-preset" "fast"
                                  "-crf" "18"
                                  "-c:a" "aac"
                                  "-b:a" "192k"
                                  "-ar" "48000"
-                                 "-ac" "2"
                                  "-movflags" "+faststart"
                                  (string-append video "-" (number->string clip-count) ".mp4"))))
               (if (= code 0)
