@@ -84,8 +84,7 @@
 (set! start/end
   (list 
     (cons 58 130) (cons 107 140) (cons 136 164) (cons 3086 3386) 
-    (cons 3388 3601) (cons 5765 6365) (cons 6375 6383) 
-    (cons 6467 6477) (cons 6650 6737)))
+    (cons 3388 3601) (cons 5765 6365) (cons 6375 6383)))
 
 (set! video/slice 
   (list (cons (make-time time-utc 0 1751400568)
