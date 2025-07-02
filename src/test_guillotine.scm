@@ -7,7 +7,7 @@
              (ice-9 textual-ports))
              ; (ice-9 match))
 
-(load "guillotine.scm")
+(load "src/guillotine.scm")
 
 (define (file->string filename)
   (call-with-input-file filename
@@ -105,4 +105,10 @@
 (test-equal "File -> VIDEO/SLICE"
              video/slice
              (string->video/slice data))
+(test-end)
+
+(test-begin "Edge")
+(test-end)
+
+(test-begin "Regression")
 (test-end)
