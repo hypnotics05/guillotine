@@ -17,15 +17,23 @@
              (ice-9 match))
 
 #| 
-  TODO: Time accuracy
-    Since we are using timestamps to name files and relying purely on timing, we should be looking 
-    for a video file whose name could be 1 second more then the provided name.
+  TODO: Flatten timeline
+    If there are some overlapping (start . end) time stamps, they should be merged into one (start . end)
+  TODO: skip empty sessions
+   IF a session is empty, as in there are only REC_START and REC_END timestamps, then we should remove it from
+   video/slice 
+  TODO: Test guillotine function
+  TODO: Better tests
+    Log files are generated even if all tests have passed, write the tests in such a way that when --log is passed
+    failed tests are saved, other wise, don't save anything
 |#
 
 (define clip-count 0)
 (define video-count 0)
+(define SHA1 60) ;; 1 minute in seconds
 (define SHA5 300) ;; 5 minutes in seconds
 (define SHA10 600) ;; 10 minutes in seconds
+(define SHA30 30) ;; 30 seconds
 
 ;; Defines paris of (CMDS . epoch) inside of a list.
 (define (string->cmd/epoch input)
@@ -43,8 +51,10 @@
     REC_START: time stamp is saved as the offset
     REC_END: used if there are no matching OUT to an IN
     IN & OUT: used as pairs, the IN timestamp is used to set the START, END is set using the next found OUT timestamp
+    SHA1 START is timestamp - 1 minute or REC_START, END is the timestamp
     SHA5: START is timestamp - 5 minutes or REC_START, END is the timestamp
     SHA10: START is timestamp - 10 minutes or REC_START, END is the timestamp
+    SHA30: START is timestamp - 30 seconds or REC_START, END is the timestamp
 |#
 (define (cmd/epoch->start/end cmds)
   (reverse (let* ((REC_START (cdr (car cmds))) 
@@ -53,7 +63,7 @@
       (match rest
              (()
               result) ; return
-             ((("IN" . in-time) . tail)
+             ((("IN" . time) . tail)
               ;; look for the next OUT
               (let ((out-pair (find (lambda (pair) (string=? (car pair) "OUT")) tail)))
                 (if out-pair
@@ -61,18 +71,28 @@
                     ;; remove the OUT we matched
                     (delete out-pair tail)
                     (let ((END (- (cdr out-pair) REC_START)))
-                      (cons (cons (- in-time REC_START) (if (> END REC_END) REC_END END)) 
+                      (cons (cons (- time REC_START) (if (> END REC_END) REC_END END)) 
                             result))) ; Create time pair
                   (loop tail result)))) ; no OUT found
-             ((("SHA5" . S5-time) . tail)
+             ((("SHA5" . time) . tail)
               (loop tail 
-                    (let ((SHA (- S5-time SHA5)))
-                      (cons (cons (if (> REC_START SHA) 0 (- SHA REC_START)) (- S5-time REC_START))
+                    (let ((SHA (- time SHA5)))
+                      (cons (cons (if (> REC_START SHA) 0 (- SHA REC_START)) (- time REC_START))
                             result))))
-             ((("SHA10" . S10-time) . tail)
+             ((("SHA10" . time) . tail)
               (loop tail 
-                    (let ((SHA (- S10-time SHA10)))
-                      (cons (cons (if (> REC_START SHA) 0 (- SHA REC_START)) (- S10-time REC_START)) 
+                    (let ((SHA (- time SHA10)))
+                      (cons (cons (if (> REC_START SHA) 0 (- SHA REC_START)) (- time REC_START)) 
+                            result))))
+             ((("SHA1" . time) . tail)
+              (loop tail 
+                    (let ((SHA (- time SHA1)))
+                      (cons (cons (if (> REC_START SHA) 0 (- SHA REC_START)) (- time REC_START)) 
+                            result))))
+             ((("SHA30" . time) . tail)
+              (loop tail 
+                    (let ((SHA (- time SHA30)))
+                      (cons (cons (if (> REC_START SHA) 0 (- SHA REC_START)) (- time REC_START)) 
                             result))))
              ((other . tail)
               (loop tail result)))))))
