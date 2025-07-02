@@ -13,6 +13,7 @@
 (use-modules (ice-9 format)
              (srfi srfi-1)
              (srfi srfi-19)
+             (ice-9 ftw)
              (ice-9 match))
 
 #| 
@@ -28,10 +29,14 @@
 
 ;; Defines paris of (CMDS . epoch) inside of a list.
 (define (string->cmd/epoch input)
-  (map (lambda (line)
-         (let ((line-pair (string-split line #\space)))
-           (cons (car line-pair) (string->number (car (cdr line-pair))))))
-       (string-split input #\newline)))
+  (drop-right 
+    ;; HACK: There seems to be a final newline in normal and portal, may have to think of better 
+    ;; solution if this fix causes issues
+    (map (lambda (line)
+           (let ((line-pair (string-split line #\space)))
+             (cons (car line-pair) (string->number (last line-pair)))))
+         (string-split input #\newline)) 
+    1))
 
 #|
   Creates a list of (START . END) pairs from epoch-pairs
@@ -42,8 +47,8 @@
     SHA10: START is timestamp - 10 minutes or REC_START, END is the timestamp
 |#
 (define (cmd/epoch->start/end cmds)
-  (let* ((REC_START (cdr (car cmds))) ;; TODO: refactor to use last-pair 
-         (REC_END (- (cdr (car (list-tail cmds (- (length cmds) 1)))) REC_START))) ;; timestamp for the end of REC
+  (reverse (let* ((REC_START (cdr (car cmds))) 
+         (REC_END (- (cdr (last cmds)) REC_START))) ;; timestamp for the end of REC
     (let loop ((rest cmds) (result '()))
       (match rest
              (()
@@ -56,21 +61,21 @@
                     ;; remove the OUT we matched
                     (delete out-pair tail)
                     (let ((END (- (cdr out-pair) REC_START)))
-                      (cons (list (- in-time REC_START) (if (> END REC_END) REC_END END)) 
+                      (cons (cons (- in-time REC_START) (if (> END REC_END) REC_END END)) 
                             result))) ; Create time pair
                   (loop tail result)))) ; no OUT found
              ((("SHA5" . S5-time) . tail)
               (loop tail 
                     (let ((SHA (- S5-time SHA5)))
-                      (cons (list (if (> REC_START SHA) 0 (- SHA REC_START)) S5-time) 
+                      (cons (cons (if (> REC_START SHA) 0 (- SHA REC_START)) (- S5-time REC_START))
                             result))))
              ((("SHA10" . S10-time) . tail)
               (loop tail 
                     (let ((SHA (- S10-time SHA10)))
-                      (cons (list (if (> REC_START SHA) 0 (- SHA REC_START)) S10-time) 
+                      (cons (cons (if (> REC_START SHA) 0 (- SHA REC_START)) (- S10-time REC_START)) 
                             result))))
              ((other . tail)
-              (loop tail result))))))
+              (loop tail result)))))))
 
 #|
   Creates a list of (time . (epoch-pairs)) to be processed.
