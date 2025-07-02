@@ -5,14 +5,14 @@
              (srfi srfi-19)
              (ice-9 ports)
              (ice-9 textual-ports))
-             ; (ice-9 match))
+; (ice-9 match))
 
 (load "src/guillotine.scm")
 
 (define (file->string filename)
   (call-with-input-file filename
-    (lambda (port)
-      (get-string-all port))))
+                        (lambda (port)
+                          (get-string-all port))))
 
 (define data "")
 (define cmd/epoch '())
@@ -20,7 +20,7 @@
 (define video/slice '())
 
 ;; Testing a real user file
-(test-begin "Portal")
+(test-begin "Portal" 3)
 
 (set! data (file->string "tests/portal"))
 
@@ -43,33 +43,33 @@
 
 (set! video/slice
   (list (cons (make-time time-utc 0 1751411859)
-        (list (list (cons "REC_START" 1751407127) (cons "IN" 1751407241) (cons "OUT" 1751407350) 
-                    (cons "IN" 1751407380) (cons "OUT" 1751407405) (cons "SHA5" 1751407417) 
-                    (cons "IN" 1751407421) (cons "OUT" 1751407501) (cons "SHA5" 1751407582) 
-                    (cons "IN" 1751407621) (cons "OUT" 1751407659) (cons "IN" 1751407672) 
-                    (cons "OUT" 1751407728) (cons "OUT" 1751407836) (cons "SHA5" 1751407891) 
-                    (cons "IN" 1751407897) (cons "OUT" 1751407931) (cons "IN" 1751407970) 
-                    (cons "OUT" 1751408076) (cons "IN" 1751411039) (cons "OUT" 1751411260) 
-                    (cons "IN" 1751411314) (cons "OUT" 1751411618) (cons "IN" 1751411644) 
-                    (cons "OUT" 1751411836) (cons "REC_END" 1751411859))))))
+              (list (list (cons "REC_START" 1751407127) (cons "IN" 1751407241) (cons "OUT" 1751407350) 
+                          (cons "IN" 1751407380) (cons "OUT" 1751407405) (cons "SHA5" 1751407417) 
+                          (cons "IN" 1751407421) (cons "OUT" 1751407501) (cons "SHA5" 1751407582) 
+                          (cons "IN" 1751407621) (cons "OUT" 1751407659) (cons "IN" 1751407672) 
+                          (cons "OUT" 1751407728) (cons "OUT" 1751407836) (cons "SHA5" 1751407891) 
+                          (cons "IN" 1751407897) (cons "OUT" 1751407931) (cons "IN" 1751407970) 
+                          (cons "OUT" 1751408076) (cons "IN" 1751411039) (cons "OUT" 1751411260) 
+                          (cons "IN" 1751411314) (cons "OUT" 1751411618) (cons "IN" 1751411644) 
+                          (cons "OUT" 1751411836) (cons "REC_END" 1751411859))))))
 
 (test-equal "File -> CMD/EPOCH"
-             cmd/epoch
-             (string->cmd/epoch data))
+            cmd/epoch
+            (string->cmd/epoch data))
 
 (test-equal "CMD/EPOCH -> START/END"
-             start/end
-             ;; in string->video/slice all cmd/epoch's start with REC_START & end with REC_END
-             ;; But the portal test has a stray OUT in the beginning
-             (cmd/epoch->start/end (cdr cmd/epoch))) 
+            start/end
+            ;; in string->video/slice all cmd/epoch's start with REC_START & end with REC_END
+            ;; But the portal test has a stray OUT in the beginning
+            (cmd/epoch->start/end (cdr cmd/epoch))) 
 
 (test-equal "File -> VIDEO/SLICE"
-             video/slice
-             (string->video/slice data))
+            video/slice
+            (string->video/slice data))
 
-(test-end)
+(test-end "Portal")
 
-(test-begin "Normal")
+(test-begin "Normal" 3)
 
 (set! data (file->string "tests/normal"))
 
@@ -88,27 +88,27 @@
 
 (set! video/slice 
   (list (cons (make-time time-utc 0 1751400568)
-        (list (list (cons "REC_START" 1751394136) (cons "IN" 1751394194) (cons "IN" 1751394243) 
-                    (cons "OUT" 1751394266) (cons "IN" 1751394272) (cons "OUT" 1751394276) 
-                    (cons "OUT" 1751394300) (cons "SHA5" 1751397522) (cons "IN" 1751397524) 
-                    (cons "OUT" 1751397737) (cons "SHA10" 1751400501) (cons "IN" 1751400511) 
-                    (cons "OUT" 1751400519) (cons "REC_END" 1751400568))))))
+              (list (list (cons "REC_START" 1751394136) (cons "IN" 1751394194) (cons "IN" 1751394243) 
+                          (cons "OUT" 1751394266) (cons "IN" 1751394272) (cons "OUT" 1751394276) 
+                          (cons "OUT" 1751394300) (cons "SHA5" 1751397522) (cons "IN" 1751397524) 
+                          (cons "OUT" 1751397737) (cons "SHA10" 1751400501) (cons "IN" 1751400511) 
+                          (cons "OUT" 1751400519) (cons "REC_END" 1751400568))))))
 
 (test-equal "File -> CMD/EPOCH"
-             cmd/epoch
-             (string->cmd/epoch data))
+            cmd/epoch
+            (string->cmd/epoch data))
 
 (test-equal "CMD/EPOCH -> START/END"
-             start/end
-             (cmd/epoch->start/end cmd/epoch))
+            start/end
+            (cmd/epoch->start/end cmd/epoch))
 
 (test-equal "File -> VIDEO/SLICE"
-             video/slice
-             (string->video/slice data))
-(test-end)
+            video/slice
+            (string->video/slice data))
+(test-end "Normal")
 
-(test-begin "Edge")
-(test-end)
+(test-begin "Edge" 0)
+(test-end "Edge")
 
-(test-begin "Regression")
-(test-end)
+(test-begin "Regression" 0)
+(test-end "Regression")
