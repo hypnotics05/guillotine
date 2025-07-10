@@ -17,15 +17,15 @@
              (ice-9 match))
 
 #| 
-  TODO: Flatten timeline
-    If there are some overlapping (start . end) time stamps, they should be merged into one (start . end)
-  TODO: skip empty sessions
-   IF a session is empty, as in there are only REC_START and REC_END timestamps, then we should remove it from
-   video/slice 
   TODO: Test guillotine function
   TODO: Better tests
     Log files are generated even if all tests have passed, write the tests in such a way that when --log is passed
     failed tests are saved, other wise, don't save anything
+  TODO: Create cli
+  TODO: Pre-process
+    If a single param is passed then assume this param is a timestamp file and processe it,
+    outputing all (video . (start end)) into a file, also allow for timestamps to be created from 
+    this file.
   TODO: Bad timeline warnings
     When there are some unballanced IN and OUT, output a warning + timestamps and surrounding time stamps.
 |#
@@ -59,9 +59,10 @@
     SHA30: START is timestamp - 30 seconds or REC_START, END is the timestamp
 |#
 (define (cmd/epoch->start/end cmds)
-  (reverse (let* ((REC_START (cdr (car cmds))) 
-         (REC_END (- (cdr (last cmds)) REC_START))) ;; timestamp for the end of REC
-    (let loop ((rest cmds) (result '()))
+  (reverse 
+    (let* ((REC_START (cdr (car cmds))) 
+           (REC_END (- (cdr (last cmds)) REC_START))) ;; timestamp for the end of REC
+      (let loop ((rest cmds) (result '()))
       (match rest
              (()
               result) ; return
@@ -149,7 +150,7 @@
                       (string-append path file)
                       (error "No matching video file found for " (car time))))
              (extension (string-append video ".mkv"))
-             (range (cmd/epoch->start/end (cdr time))))
+             (range (cdr time)))
         (for-each 
           (lambda (clip)
             (let ((code (system* "ffmpeg"
@@ -173,7 +174,11 @@
                     (display (string-append extension " failed with clip " clip) port))))))
           range)
         (set! video-count (+ video-count 1))))
-    (string->video/slice time)))
+    (filter (lambda (pair)
+              (not (null? (cdr pair))))
+            (map (lambda (pair) 
+                   (cons (car pair) (cmd/epoch->start/end (cdr pair)))) 
+                 (string->video/slice time)))))
 
 #|
   guillotine path file
