@@ -143,8 +143,13 @@
     (lambda (pair) 
       (let* ((file 
                (find (lambda (file) 
-                       (or (string=? file (date->string (time-utc->date (car time)) "~Y-~m-~d-~H-~M-~S"))
-                           (string=? file (date->string (time-utc->date (add-duration (car time) (make-time time-duration 0 1))) "~Y-~m-~d-~H-~M-~S"))))
+                       (or (string-contains file (date->string (time-utc->date (car time)) 
+                                                        "~Y-~m-~d-~H-~M-~S"))
+                           (string-contains file 
+                                     (date->string (time-utc->date 
+                                                     (add-duration (car time) 
+                                                                   (make-time time-duration 0 1))) 
+                                                   "~Y-~m-~d-~H-~M-~S"))))
                      (scandir path)))
              (video (if file
                       (string-append path file)
