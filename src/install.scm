@@ -8,6 +8,7 @@
 ;; For each value in path display next to index, read user input, install to path of index provided by user
 
 (define path (string-split (get-environment-variable "PATH") #\:))
+(define script "src/guillotine.scm")
 
 (let loop ((lst path) (i 0))
   (when (pair? lst)
@@ -20,7 +21,7 @@
 (newline)
 
 (define code (system* 
-  "cp" "guillotine.scm"
+  "cp" script
   (string-append dir "guillotine")))
 
 (unless (= code 0)
