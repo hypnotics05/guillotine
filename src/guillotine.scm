@@ -134,7 +134,7 @@
                        (loop (cdr rest) #f current acc))))))
     (map (lambda (range) ;; 
            (cons (make-time time-utc 0 (cdr (car (last-pair range))))
-                 (list range)))
+                 range))
          ranges)))
 
 (define (guillotine path time)
