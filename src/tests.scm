@@ -8,12 +8,24 @@
              (ice-9 textual-ports))
 ; (ice-9 match))
 
-(load "guillotine.scm")
+#|
+  TODO: Error testing
+    Need tests for errors, and incorect data.
+|#
+
+(if (string-contains (car (program-arguments)) "src/guillotine.scm")
+  (load "guillotine.scm")
+  (load "src/guillotine.scm"))
+
 
 (define (file->string filename)
   (call-with-input-file filename
                         (lambda (port)
                           (get-string-all port))))
+
+(define (test-log-clear results name)
+  (when (test-passed? results)
+     (delete-file name)))
 
 (define data "")
 (define cmd/epoch '())
@@ -99,6 +111,8 @@
             video/slice
             (string->video/slice data))
 
+(test-log-clear (test-runner-get) "Portal.log")
+
 (test-end "Portal")
 
 (test-begin "Normal" 3)
@@ -137,4 +151,7 @@
 (test-equal "File -> VIDEO/SLICE"
             video/slice
             (string->video/slice data))
+
+(test-log-clear (test-runner-get) "Normal.log")
+
 (test-end "Normal")

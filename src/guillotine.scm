@@ -18,14 +18,15 @@
 
 #| 
   TODO: Test guillotine function
-  TODO: Better tests
-    Log files are generated even if all tests have passed, write the tests in such a way that when --log is passed
-    failed tests are saved, other wise, don't save anything
   TODO: Create cli
+  TODO: Create better error handling
+    What happens when a bad file is passed?
+    When an error occurs during a video split?
   TODO: Pre-process
     If a single param is passed then assume this param is a timestamp file and processe it,
     outputing all (video . (start end)) into a file, also allow for timestamps to be created from 
     this file.
+  TODO: Multi-thread video processing
   TODO: Bad timeline warnings
     When there are some unballanced IN and OUT, output a warning + timestamps and surrounding time stamps.
 |#
