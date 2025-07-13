@@ -61,7 +61,7 @@
 |#
 (define (cmd/epoch->start/end cmds)
   (reverse 
-    (let* ((REC_START (cdr (car cmds))) 
+    (let* ((REC_START (cdar cmds))
            (REC_END (- (cdr (last cmds)) REC_START))) ;; timestamp for the end of REC
       (let loop ((rest cmds) (result '()))
       (match rest
@@ -116,14 +116,14 @@
                       (reverse acc))
 
                      ((and (not in-range?)
-                           (string=? (car (car rest)) "REC_START")
-                           (number? (cdr (car rest))))
+                           (string=? (caar rest) "REC_START")
+                           (number? (cdar rest)))
                       ;; Found start of new range
                       (loop (cdr rest) #t (list (car rest)) acc))
 
                      ((and in-range?
-                           (string=? (car (car rest)) "REC_END")
-                           (number? (cdr (car rest))))
+                           (string=? (caar rest) "REC_END")
+                           (number? (cdar rest)))
                       ;; End of current range, add it to result
                       (loop (cdr rest) #f '() (cons (reverse (cons (car rest) current)) acc)))
 
@@ -135,10 +135,15 @@
                        ;; Outside of any range, keep scanning
                        (loop (cdr rest) #f current acc))))))
     (map (lambda (range) ;; 
-           (cons (make-time time-utc 0 (cdr (car (last-pair range))))
+           (cons (make-time time-utc 0 (cdar (last-pair range)))
                  range))
          ranges)))
 
+#| FIX: logic errors
+    First filter out list to only have mkv files
+    Make sure path is being handle (It must end with /)
+    System* error handling, we may not be appending, but overwritting
+|#
 (define (guillotine path time)
   (for-each 
     (lambda (pair) 
@@ -161,7 +166,7 @@
           (lambda (clip)
             (let ((code (system* "ffmpeg"
                                  "-ss" (car clip)
-                                 "-to" (car (cdr clip))
+                                 "-to" (cadr clip)
                                  "-i" extension
                                  "-map" "0"
                                  "-c:v" "libx264"
